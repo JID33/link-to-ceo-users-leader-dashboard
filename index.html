@@ -1,6 +1,5 @@
-
 <!DOCTYPE html>
-<html lang="="fr">
+<html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,6 +21,27 @@
       table { font-size: 0.8em; }
     }
     #forgotSection { text-align: center; margin-top: 10px; font-size: 0.9em; color: #555; cursor: pointer; }
+
+    /* Ajout d'un style pour l'input dailyInvest si vous voulez le rendre visible et ajustable */
+    #dailyInvestContainer {
+        margin-top: 20px;
+        padding: 10px;
+        border: 1px dashed #004080;
+        border-radius: 5px;
+        text-align: left;
+    }
+    #dailyInvestContainer label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #004080;
+    }
+    #dailyInvestContainer input {
+        width: calc(100% - 22px); /* Pour laisser de la place au padding et border */
+        display: inline-block;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
   </style>
 </head>
 <body>
@@ -38,6 +58,10 @@
   </div>
 
   <div class="card" id="mainCard" style="display:none;">
+    <div id="dailyInvestContainer">
+        <label for="dailyInvest">Montant de l'investissement par participant ($):</label>
+        <input type="number" id="dailyInvest" value="10" min="0" step="0.01">
+    </div>
     <input type="text" id="participantName" placeholder="Nom du participant" />
     <button onclick="addParticipant()" class="btn-primary">➕ Ajouter</button>
 
@@ -81,29 +105,50 @@ function checkAdminStep2() {
 }
 
 async function loadData() {
-  const res = await fetch(`${API_URL}?action=get`);
-  const data = await res.json();
-  participants = data.participants || [];
-  history = data.history || [];
-  currentDay = history.length + 1;
-  renderParticipants();
-  renderHistory();
-  updateStats();
+  try {
+    const res = await fetch(`${API_URL}?action=get`);
+    const data = await res.json();
+    participants = data.participants || [];
+    history = data.history || [];
+    currentDay = history.length + 1; // Le jour actuel est basé sur la longueur de l'historique
+    renderParticipants();
+    renderHistory();
+    updateStats();
+  } catch (error) {
+    console.error("Erreur lors du chargement des données:", error);
+    alert("Impossible de charger les données. Vérifiez votre connexion ou l'URL de l'API.");
+  }
 }
 
 function renderParticipants() {
   const ul = document.getElementById("participantsList");
-  ul.innerHTML = "<h3>Participants</h3><ul>" +
+  if (participants.length === 0) {
+    ul.innerHTML = "<h3>Participants inscrits</h3><p>Aucun participant ajouté pour l'instant.</p>";
+    return;
+  }
+  ul.innerHTML = "<h3>Participants inscrits (" + participants.length + ")</h3><ul>" +
     participants.map(p => `<li>Jour ${p.day} – ${p.name}</li>`).join('') +
     "</ul>";
 }
 
 function renderHistory() {
   const div = document.getElementById("historyTable");
-  if (history.length === 0) return div.innerHTML = "<p>Aucun historique.</p>";
-  let html = "<h3>Historique</h3><table><tr><th>Jour</th><th>Bénéficiaire</th><th>Total</th><th>1/3</th><th>10%</th><th>Retenu</th><th>Payé</th><th>Date & Heure</th></tr>";
+  if (history.length === 0) {
+    div.innerHTML = "<h3>Historique des Rotations</h3><p>Aucun historique de rotation enregistré.</p>";
+    return;
+  }
+  let html = "<h3>Historique des Rotations</h3><table><tr><th>Jour</th><th>Bénéficiaire</th><th>Pool Total</th><th>1/3 Retenu Init.</th><th>10% (Frais)</th><th>Montant Retenu</th><th>Gain Net</th><th>Date & Heure</th></tr>";
   for (let row of history) {
-    html += `<tr><td>${row.jour}</td><td>${row.beneficiary}</td><td>${row.total}</td><td>${row.oneThird}</td><td>${row.tenPercent}</td><td>${row.retained}</td><td>${row.payout}</td><td>${row.dateTime}</td></tr>`;
+    html += `<tr>
+                <td>${row.jour}</td>
+                <td>${row.beneficiary}</td>
+                <td>$${parseFloat(row.total).toFixed(2)}</td>
+                <td>$${parseFloat(row.oneThird).toFixed(2)}</td>
+                <td>$${parseFloat(row.tenPercent).toFixed(2)}</td>
+                <td>$${parseFloat(row.retained).toFixed(2)}</td>
+                <td>$${parseFloat(row.payout).toFixed(2)}</td>
+                <td>${row.dateTime}</td>
+              </tr>`;
   }
   html += "</table>";
   div.innerHTML = html;
@@ -111,62 +156,140 @@ function renderHistory() {
 
 async function addParticipant() {
   const name = document.getElementById("participantName").value.trim();
-  if (!name) return alert("Nom requis");
-  const day = participants.length + 1;
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "addParticipant", name, day })
-  });
-  loadData();
-  document.getElementById("participantName").value = "";
+  if (!name) {
+    alert("Le nom du participant est requis !");
+    return;
+  }
+  const day = participants.length + 1; // Le jour attribué au participant lors de son ajout
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "addParticipant", name, day })
+    });
+    document.getElementById("participantName").value = "";
+    loadData(); // Recharger les données pour afficher le nouveau participant
+  } catch (error) {
+    console.error("Erreur lors de l'ajout du participant:", error);
+    alert("Erreur lors de l'ajout du participant. Vérifiez votre connexion ou l'API.");
+  }
 }
 
 async function validatePayments() {
-  if (participants.length === 0) return alert("Aucun participant");
-  const jour = currentDay;
-  const total = participants.length * 10;
-  const oneThird = total / 3;
-  const tenPercent = oneThird * 0.1;
-  const retained = oneThird - tenPercent;
-  const payout = total - retained;
-  const beneficiary = participants[(jour - 1) % participants.length].name;
-  const dateTime = new Date().toLocaleString("fr-FR", { hour12: false });
+    // Vérification initiale pour s'assurer qu'il y a des participants
+    if (participants.length === 0) {
+        alert("Aucun participant dans la rotation. Veuillez ajouter des participants d'abord.");
+        return;
+    }
 
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({
-      action: "addHistory",
-      jour,
-      beneficiary,
-      total: total.toFixed(2),
-      oneThird: oneThird.toFixed(2),
-      tenPercent: tenPercent.toFixed(2),
-      retained: retained.toFixed(2),
-      payout: payout.toFixed(2),
-      dateTime
-    })
-  });
-  currentDay++;
-  loadData();
+    const jour = currentDay;
+    
+    // Logique de calcul du pool total basée sur le nombre de participants
+    let baseMultiplier;
+    // Si le nombre TOTAL de participants inscrits dans la rotation est <= 5
+    if (participants.length <= 5) { // Le "participants.length" représente le nombre total de personnes actuellement dans la liste de rotation.
+        baseMultiplier = 10; // Le pool est basé sur 10 contributions individuelles
+    } else {
+        baseMultiplier = 11; // Au-delà de 5 participants, le pool est basé sur 11 contributions
+    }
+    
+    // Récupération de la valeur de l'investissement individuel
+    const dailyInvestInput = document.getElementById("dailyInvest");
+    const dailyInvest = parseFloat(dailyInvestInput.value); 
+    
+    if (isNaN(dailyInvest) || dailyInvest <= 0) {
+        alert("Veuillez entrer un montant d'investissement individuel valide (nombre positif).");
+        dailyInvestInput.focus();
+        return;
+    }
+
+    const total = baseMultiplier * dailyInvest; // Calcul du pool total
+
+    const oneThird = total / 3; // 1/3 du pool total
+    const tenPercent = oneThird * 0.1; // 10% de ce 1/3
+    const retained = oneThird - tenPercent; // Le montant retenu
+
+    const payout = total - retained; // Ce que le bénéficiaire reçoit
+
+    // Détermination du bénéficiaire du jour (le reste du code est inchangé)
+    const beneficiaryIndex = (jour - 1) % participants.length;
+    const beneficiary = participants[beneficiaryIndex].name;
+    const dateTime = new Date().toLocaleString("fr-FR", { hour12: false, timeZone: 'America/Port-au-Prince' }); // Fuseau horaire d'Haïti
+
+    // Envoi des données à l'API Google Sheets
+    try {
+        await fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "addHistory",
+                jour,
+                beneficiary,
+                total: total.toFixed(2), // Formatage à 2 décimales pour l'affichage
+                oneThird: oneThird.toFixed(2),
+                tenPercent: tenPercent.toFixed(2),
+                retained: retained.toFixed(2),
+                payout: payout.toFixed(2),
+                dateTime
+            })
+        });
+        currentDay++; // Incrémente le jour après une validation réussie
+        await loadData(); // Recharge les données pour mettre à jour l'interface
+        alert(`Paiement validé pour le Jour ${jour}. Le bénéficiaire ${beneficiary} a reçu $${payout.toFixed(2)}.`);
+    } catch (error) {
+        console.error("Erreur lors de la validation du paiement:", error);
+        alert("Erreur lors de la validation du paiement. Veuillez vérifier la console.");
+    }
 }
 
 function nextDay() {
   currentDay++;
-  updateStats();
+  updateStats(); // Met à jour les statistiques pour le jour suivant
+  alert(`Passage au Jour ${currentDay}.`);
 }
 
 function updateStats() {
   const stats = document.getElementById("stats");
-  if (participants.length === 0) return stats.innerHTML = "<p>Aucune donnée</p>";
+  if (participants.length === 0) {
+    stats.innerHTML = "<p>Aucune donnée de participant pour les statistiques.</p>";
+    return;
+  }
+  
   const jour = currentDay;
-  const total = participants.length * 10;
+  
+  // Logique de calcul du pool total basée sur le nombre de participants
+  let baseMultiplier;
+  if (participants.length <= 5) {
+      baseMultiplier = 10;
+  } else {
+      baseMultiplier = 11;
+  }
+
+  const dailyInvest = parseFloat(document.getElementById("dailyInvest").value);
+  if (isNaN(dailyInvest) || dailyInvest <= 0) {
+      // Si la valeur est invalide, on peut afficher un message d'erreur ou utiliser une valeur par défaut
+      stats.innerHTML = "<p class='error-msg'>Veuillez entrer un montant d'investissement individuel valide pour les statistiques.</p>";
+      return;
+  }
+
+  const total = baseMultiplier * dailyInvest;
+  
   const oneThird = total / 3;
   const tenPercent = oneThird * 0.1;
   const retained = oneThird - tenPercent;
   const payout = total - retained;
-  const beneficiary = participants[(jour - 1) % participants.length].name;
-  stats.innerHTML = `<strong>Jour ${jour} :</strong> ${beneficiary} (prévu)<br>
-    Total: $${total.toFixed(2)}, 1/3: $${oneThird.toFixed(2)}, 10%: $${tenPercent.toFixed(2)}, Retenu: $${retained.toFixed(2)}, Payé: $${payout.toFixed(2)}`;
+  
+  // Vérifier si le tableau des participants a des éléments avant d'accéder à l'index
+  const beneficiary = participants.length > 0 ? participants[(jour - 1) % participants.length].name : "N/A";
+  
+  stats.innerHTML = `<strong>Statistiques du Jour Actuel (${jour}) :</strong><br>
+      Bénéficiaire Prévu: <span style="font-weight:bold; color:#007BFF;">${beneficiary}</span><br>
+      Participants Actifs: ${participants.length}<br>
+      Montant d'investissement individuel: $${dailyInvest.toFixed(2)}<br>
+      <hr style="border-top: 1px dotted #ccc; margin: 10px 0;">
+      Pool Total (basé sur ${baseMultiplier} participants): <strong style="color:#28a744;">$${total.toFixed(2)}</strong><br>
+      1/3 Retenu Initialement: $${oneThird.toFixed(2)}<br>
+      10% de ce 1/3 (Frais/Réserve): $${tenPercent.toFixed(2)}<br>
+      Montant Retenu Finalement par le système: $${retained.toFixed(2)}<br>
+      Gain Net du Bénéficiaire: <strong style="color:#dc3545;">$${payout.toFixed(2)}</strong>`;
 }
 
 function exportToExcel() {
@@ -178,18 +301,23 @@ function exportToExcel() {
 }
 
 async function resetData() {
-  if (!confirm("Confirmer la réinitialisation de toutes les données ?")) return;
-  await fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({ action: "resetAll" })
-  });
-  participants = [];
-  history = [];
-  currentDay = 1;
-  renderParticipants();
-  renderHistory();
-  updateStats();
-  alert("Toutes les données ont été réinitialisées.");
+  if (!confirm("ATTENTION : Confirmer la réinitialisation COMPLÈTE de toutes les données (participants et historique) ? Cette action est irréversible !")) return;
+  try {
+    await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "resetAll" })
+    });
+    participants = [];
+    history = [];
+    currentDay = 1;
+    renderParticipants();
+    renderHistory();
+    updateStats();
+    alert("Toutes les données ont été réinitialisées avec succès.");
+  } catch (error) {
+    console.error("Erreur lors de la réinitialisation des données:", error);
+    alert("Erreur lors de la réinitialisation des données. Vérifiez votre connexion ou l'API.");
+  }
 }
 </script>
 </body>
