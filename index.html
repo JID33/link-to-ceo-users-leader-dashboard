@@ -22,7 +22,6 @@
     }
     #forgotSection { text-align: center; margin-top: 10px; font-size: 0.9em; color: #555; cursor: pointer; }
 
-    /* Ajout d'un style pour l'input dailyInvest si vous voulez le rendre visible et ajustable */
     #dailyInvestContainer {
         margin-top: 20px;
         padding: 10px;
@@ -37,7 +36,7 @@
         color: #004080;
     }
     #dailyInvestContainer input {
-        width: calc(100% - 22px); /* Pour laisser de la place au padding et border */
+        width: calc(100% - 22px); 
         display: inline-block;
         margin-top: 0;
         margin-bottom: 0;
@@ -77,30 +76,49 @@
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycby44bVHJV3oXXZ7OK7vl5NuOHQdiJDmjKvSve1GfZ-We3tG2ANyAV6X5l9jSR4ls8x0/exec";
-const ADMIN_PASSWORD = "d2b1admin";
-const SECOND_CODE = "123456";
 let participants = [];
 let history = [];
 let currentDay = 1;
+let lastDayOneThirdNetRetained = 0; // Variable pour stocker le 1/3 net retenu du jour précédent
 
-function checkAdminStep1() {
+async function checkAdminStep1() {
   const pass = document.getElementById("adminPass").value;
-  if (pass === ADMIN_PASSWORD) {
-    document.getElementById("authCard").style.display = "none";
-    document.getElementById("codeCard").style.display = "block";
-  } else {
-    alert("Mot de passe incorrect");
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "verifyPassword", password: pass })
+    });
+    const result = await response.json();
+    if (result.success) {
+      document.getElementById("authCard").style.display = "none";
+      document.getElementById("codeCard").style.display = "block";
+    } else {
+      alert("Mot de passe incorrect");
+    }
+  } catch (error) {
+    console.error("Erreur de vérification du mot de passe:", error);
+    alert("Erreur de communication avec le serveur. Vérifiez votre connexion.");
   }
 }
 
-function checkAdminStep2() {
+async function checkAdminStep2() {
   const code = document.getElementById("code2FA").value.trim();
-  if (code === SECOND_CODE) {
-    document.getElementById("codeCard").style.display = "none";
-    document.getElementById("mainCard").style.display = "block";
-    loadData();
-  } else {
-    alert("Code de vérification invalide");
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ action: "verifyCode", code: code })
+    });
+    const result = await response.json();
+    if (result.success) {
+      document.getElementById("codeCard").style.display = "none";
+      document.getElementById("mainCard").style.display = "block";
+      loadData();
+    } else {
+      alert("Code de vérification invalide");
+    }
+  } catch (error) {
+    console.error("Erreur de vérification du code:", error);
+    alert("Erreur de communication avec le serveur. Vérifiez votre connexion.");
   }
 }
 
@@ -110,7 +128,15 @@ async function loadData() {
     const data = await res.json();
     participants = data.participants || [];
     history = data.history || [];
-    currentDay = history.length + 1; // Le jour actuel est basé sur la longueur de l'historique
+    currentDay = history.length + 1; 
+
+    // Mettre à jour lastDayOneThirdNetRetained basé sur le dernier historique
+    if (history.length > 0) {
+        lastDayOneThirdNetRetained = parseFloat(history[history.length - 1].retained) || 0;
+    } else {
+        lastDayOneThirdNetRetained = 0; // Pas d'historique, donc rien à ajouter
+    }
+
     renderParticipants();
     renderHistory();
     updateStats();
@@ -137,12 +163,15 @@ function renderHistory() {
     div.innerHTML = "<h3>Historique des Rotations</h3><p>Aucun historique de rotation enregistré.</p>";
     return;
   }
-  let html = "<h3>Historique des Rotations</h3><table><tr><th>Jour</th><th>Bénéficiaire</th><th>Pool Total</th><th>1/3 Retenu Init.</th><th>10% (Frais)</th><th>Montant Retenu</th><th>Gain Net</th><th>Date & Heure</th></tr>";
+  let html = "<h3>Historique des Rotations</h3><table><tr><th>Jour</th><th>Bénéficiaire</th><th>Pool Base</th><th>Pool Total Jour</th><th>1/3</th><th>10% (Frais)</th><th>1/3 Net Retenu</th><th>Gain Net</th><th>Date & Heure</th></tr>";
   for (let row of history) {
+    // Note: Les noms des champs dans row (total, oneThird, etc.) correspondent aux noms envoyés à l'API.
+    // Votre API actuelle envoie 'total' qui est en fait 'currentDayTotal' ici.
+    // Et 'retained' qui est 'oneThirdNetRetained' ici.
     html += `<tr>
                 <td>${row.jour}</td>
                 <td>${row.beneficiary}</td>
-                <td>$${parseFloat(row.total).toFixed(2)}</td>
+                <td>$${parseFloat(row.baseTotal || 0).toFixed(2)}</td> <td>$${parseFloat(row.total).toFixed(2)}</td>
                 <td>$${parseFloat(row.oneThird).toFixed(2)}</td>
                 <td>$${parseFloat(row.tenPercent).toFixed(2)}</td>
                 <td>$${parseFloat(row.retained).toFixed(2)}</td>
@@ -160,14 +189,14 @@ async function addParticipant() {
     alert("Le nom du participant est requis !");
     return;
   }
-  const day = participants.length + 1; // Le jour attribué au participant lors de son ajout
+  const day = participants.length + 1; 
   try {
     await fetch(API_URL, {
       method: "POST",
       body: JSON.stringify({ action: "addParticipant", name, day })
     });
     document.getElementById("participantName").value = "";
-    loadData(); // Recharger les données pour afficher le nouveau participant
+    loadData(); 
   } catch (error) {
     console.error("Erreur lors de l'ajout du participant:", error);
     alert("Erreur lors de l'ajout du participant. Vérifiez votre connexion ou l'API.");
@@ -175,7 +204,6 @@ async function addParticipant() {
 }
 
 async function validatePayments() {
-    // Vérification initiale pour s'assurer qu'il y a des participants
     if (participants.length === 0) {
         alert("Aucun participant dans la rotation. Veuillez ajouter des participants d'abord.");
         return;
@@ -183,16 +211,14 @@ async function validatePayments() {
 
     const jour = currentDay;
     
-    // Logique de calcul du pool total basée sur le nombre de participants
+    // 1. Calcul du Pool de Base (baseTotal)
     let baseMultiplier;
-    // Si le nombre TOTAL de participants inscrits dans la rotation est <= 5
-    if (participants.length <= 5) { // Le "participants.length" représente le nombre total de personnes actuellement dans la liste de rotation.
-        baseMultiplier = 10; // Le pool est basé sur 10 contributions individuelles
+    if (participants.length <= 5) { 
+        baseMultiplier = 10; 
     } else {
-        baseMultiplier = 11; // Au-delà de 5 participants, le pool est basé sur 11 contributions
+        baseMultiplier = 11; 
     }
     
-    // Récupération de la valeur de l'investissement individuel
     const dailyInvestInput = document.getElementById("dailyInvest");
     const dailyInvest = parseFloat(dailyInvestInput.value); 
     
@@ -202,18 +228,30 @@ async function validatePayments() {
         return;
     }
 
-    const total = baseMultiplier * dailyInvest; // Calcul du pool total
+    const baseTotal = baseMultiplier * dailyInvest;
 
-    const oneThird = total / 3; // 1/3 du pool total
-    const tenPercent = oneThird * 0.1; // 10% de ce 1/3
-    const retained = oneThird - tenPercent; // Le montant retenu
+    // 2. Calcul du Pool Total du Jour (currentDayTotal)
+    // Pour le jour 1, on ajoute 0 au pool de base. Pour les jours suivants, on ajoute le 1/3 net retenu du jour précédent.
+    const currentDayTotal = baseTotal + lastDayOneThirdNetRetained;
 
-    const payout = total - retained; // Ce que le bénéficiaire reçoit
+    // 3. Prélèvement du Premier Tiers (oneThird)
+    const oneThird = currentDayTotal / 3;
 
-    // Détermination du bénéficiaire du jour (le reste du code est inchangé)
+    // 4. Prélèvement des 10% de ce Tiers (tenPercentOfOneThird)
+    const tenPercentOfOneThird = oneThird * 0.1;
+
+    // 5. Calcul du "1/3 Net Retenu" (oneThirdNetRetained)
+    // C'est ce montant qui est retenu et sera ajouté au pool du jour suivant
+    const oneThirdNetRetained = oneThird - tenPercentOfOneThird;
+
+    // 6. Calcul du Gain Net du Bénéficiaire (payout)
+    // Le gain est le pool total du jour moins le montant qui sera retenu pour le jour suivant.
+    const payout = currentDayTotal - oneThirdNetRetained;
+
+    // Détermination du bénéficiaire du jour
     const beneficiaryIndex = (jour - 1) % participants.length;
     const beneficiary = participants[beneficiaryIndex].name;
-    const dateTime = new Date().toLocaleString("fr-FR", { hour12: false, timeZone: 'America/Port-au-Prince' }); // Fuseau horaire d'Haïti
+    const dateTime = new Date().toLocaleString("fr-FR", { hour12: false, timeZone: 'America/Port-au-Prince' });
 
     // Envoi des données à l'API Google Sheets
     try {
@@ -223,16 +261,20 @@ async function validatePayments() {
                 action: "addHistory",
                 jour,
                 beneficiary,
-                total: total.toFixed(2), // Formatage à 2 décimales pour l'affichage
+                baseTotal: baseTotal.toFixed(2), // Nouveau champ pour le pool de base
+                total: currentDayTotal.toFixed(2), // 'total' dans l'API représente le 'currentDayTotal' ici
                 oneThird: oneThird.toFixed(2),
-                tenPercent: tenPercent.toFixed(2),
-                retained: retained.toFixed(2),
+                tenPercent: tenPercentOfOneThird.toFixed(2),
+                retained: oneThirdNetRetained.toFixed(2), // 'retained' dans l'API représente le 'oneThirdNetRetained' ici
                 payout: payout.toFixed(2),
                 dateTime
             })
         });
-        currentDay++; // Incrémente le jour après une validation réussie
-        await loadData(); // Recharge les données pour mettre à jour l'interface
+        
+        // Mise à jour de la variable pour le prochain calcul
+        lastDayOneThirdNetRetained = oneThirdNetRetained;
+        currentDay++; 
+        await loadData(); 
         alert(`Paiement validé pour le Jour ${jour}. Le bénéficiaire ${beneficiary} a reçu $${payout.toFixed(2)}.`);
     } catch (error) {
         console.error("Erreur lors de la validation du paiement:", error);
@@ -242,7 +284,7 @@ async function validatePayments() {
 
 function nextDay() {
   currentDay++;
-  updateStats(); // Met à jour les statistiques pour le jour suivant
+  updateStats(); 
   alert(`Passage au Jour ${currentDay}.`);
 }
 
@@ -255,7 +297,7 @@ function updateStats() {
   
   const jour = currentDay;
   
-  // Logique de calcul du pool total basée sur le nombre de participants
+  // Calcul du Pool de Base (baseTotal)
   let baseMultiplier;
   if (participants.length <= 5) {
       baseMultiplier = 10;
@@ -265,19 +307,23 @@ function updateStats() {
 
   const dailyInvest = parseFloat(document.getElementById("dailyInvest").value);
   if (isNaN(dailyInvest) || dailyInvest <= 0) {
-      // Si la valeur est invalide, on peut afficher un message d'erreur ou utiliser une valeur par défaut
       stats.innerHTML = "<p class='error-msg'>Veuillez entrer un montant d'investissement individuel valide pour les statistiques.</p>";
       return;
   }
+  const baseTotal = baseMultiplier * dailyInvest;
 
-  const total = baseMultiplier * dailyInvest;
+  // Calcul du Pool Total du Jour (currentDayTotal)
+  const currentDayTotal = baseTotal + lastDayOneThirdNetRetained;
   
-  const oneThird = total / 3;
-  const tenPercent = oneThird * 0.1;
-  const retained = oneThird - tenPercent;
-  const payout = total - retained;
+  // Prélèvement du Premier Tiers (oneThird)
+  const oneThird = currentDayTotal / 3;
+  // Prélèvement des 10% de ce Tiers (tenPercentOfOneThird)
+  const tenPercentOfOneThird = oneThird * 0.1;
+  // Calcul du "1/3 Net Retenu" (oneThirdNetRetained)
+  const oneThirdNetRetained = oneThird - tenPercentOfOneThird;
+  // Calcul du Gain Net du Bénéficiaire (payout)
+  const payout = currentDayTotal - oneThirdNetRetained;
   
-  // Vérifier si le tableau des participants a des éléments avant d'accéder à l'index
   const beneficiary = participants.length > 0 ? participants[(jour - 1) % participants.length].name : "N/A";
   
   stats.innerHTML = `<strong>Statistiques du Jour Actuel (${jour}) :</strong><br>
@@ -285,10 +331,12 @@ function updateStats() {
       Participants Actifs: ${participants.length}<br>
       Montant d'investissement individuel: $${dailyInvest.toFixed(2)}<br>
       <hr style="border-top: 1px dotted #ccc; margin: 10px 0;">
-      Pool Total (basé sur ${baseMultiplier} participants): <strong style="color:#28a744;">$${total.toFixed(2)}</strong><br>
+      Pool de Base (sur ${baseMultiplier} participants): $${baseTotal.toFixed(2)}<br>
+      1/3 Net Retenu du Jour Précédent ajouté: $${lastDayOneThirdNetRetained.toFixed(2)}<br>
+      Pool Total pour le Jour ${jour}: <strong style="color:#28a744;">$${currentDayTotal.toFixed(2)}</strong><br>
       1/3 Retenu Initialement: $${oneThird.toFixed(2)}<br>
-      10% de ce 1/3 (Frais/Réserve): $${tenPercent.toFixed(2)}<br>
-      Montant Retenu Finalement par le système: $${retained.toFixed(2)}<br>
+      10% de ce 1/3 (Frais/Réserve): $${tenPercentOfOneThird.toFixed(2)}<br>
+      Montant 1/3 Net Retenu (pour le prochain jour): $${oneThirdNetRetained.toFixed(2)}<br>
       Gain Net du Bénéficiaire: <strong style="color:#dc3545;">$${payout.toFixed(2)}</strong>`;
 }
 
@@ -310,6 +358,7 @@ async function resetData() {
     participants = [];
     history = [];
     currentDay = 1;
+    lastDayOneThirdNetRetained = 0; // Réinitialiser aussi cette variable
     renderParticipants();
     renderHistory();
     updateStats();
