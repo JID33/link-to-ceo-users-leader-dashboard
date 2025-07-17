@@ -1,25 +1,46 @@
-document.getElementById("registerForm").addEventListener("submit", function (e) {
-  e.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
+  const registerForm = document.getElementById('registerForm');
+  const loginForm = document.getElementById('loginForm');
 
-  const username = document.getElementById("username").value.trim();
-  const rawPassword = document.getElementById("password").value.trim();
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fullname = document.getElementById('fullname').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm').value;
 
-  if (rawPassword.length < 8) {
-    alert("Mot de passe trop court. Minimum 8 caractères.");
-    return;
+      if (password !== confirm) {
+        alert("Les mots de passe ne correspondent pas.");
+        return;
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      localStorage.setItem('user', JSON.stringify({ fullname, email, password: hashedPassword }));
+      alert("Inscription réussie !");
+      window.location.href = "login.html";
+    });
   }
 
-  // Hachage avec bcrypt
-  const salt = bcrypt.genSaltSync(10);
-  const hashedPassword = bcrypt.hashSync(rawPassword, salt);
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      const user = JSON.parse(localStorage.getItem('user'));
 
-  // Afficher le résultat dans la page
-  document.getElementById("result").innerHTML =
-    "✅ Inscription réussie !<br>Nom d'utilisateur : <b>" +
-    username +
-    "</b><br>Mot de passe haché : <br><textarea style='width:100%;height:100px'>" +
-    hashedPassword +
-    "</textarea>";
-
-  // Tu peux ensuite envoyer ces données à un backend (Firebase, Node, etc.)
+      if (user && user.email === email) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (isMatch) {
+          alert("Connexion réussie !");
+          localStorage.setItem("isAdmin", true);
+          window.location.href = "admin.html";
+        } else {
+          alert("Mot de passe incorrect !");
+        }
+      } else {
+        alert("Utilisateur non trouvé.");
+      }
+    });
+  }
 });
