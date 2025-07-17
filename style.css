@@ -1,44 +1,85 @@
 body {
   font-family: 'Arial', sans-serif;
-  background: linear-gradient(to right, #4facfe, #00f2fe);
   margin: 0;
-  padding: 0;
-  display: flex;
-  height: 100vh;
-  align-items: center;
-  justify-content: center;
+  background: linear-gradient(to bottom right, #e0f7fa, #b2ebf2);
+  color: #333;
 }
 
 .container {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 20px;
   background: white;
-  padding: 2rem;
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-  width: 100%;
-  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 0 15px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #00796b;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 input, button {
-  width: 100%;
-  padding: 0.75rem;
-  margin: 0.5rem 0;
-  border-radius: 5px;
+  padding: 12px;
+  border-radius: 6px;
   border: 1px solid #ccc;
+  font-size: 16px;
 }
 
 button {
-  background-color: #00c3ff;
+  background-color: #00796b;
   color: white;
-  font-weight: bold;
-  border: none;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
 
 button:hover {
-  background-color: #008ecc;
+  background-color: #004d40;
 }
 
-a {
-  color: #007bff;
+.slider {
+  background-color: #004d40;
+  color: white;
+  padding: 10px;
+  overflow: hidden;
+}
+
+.slides {
+  display: flex;
+  animation: slide 15s infinite;
+}
+
+.slide {
+  min-width: 100%;
+  text-align: center;
+  font-size: 20px;
+  padding: 15px;
+}
+
+@keyframes slide {
+  0% { transform: translateX(0%); }
+  33% { transform: translateX(-100%); }
+  66% { transform: translateX(-200%); }
+  100% { transform: translateX(0%); }
+}
+
+.contact {
+  text-align: center;
+  margin: 30px 0;
+}
+
+.contact a {
+  background: #25D366;
+  color: white;
+  padding: 10px 20px;
   text-decoration: none;
+  border-radius: 30px;
+  display: inline-block;
 }
