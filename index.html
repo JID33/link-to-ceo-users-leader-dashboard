@@ -2,23 +2,51 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <title>D2B1 – Inscription</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>D2B1 - Authentification</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+
+  <!-- Slider -->
+  <section class="slider">
+    <div class="slides">
+      <div class="slide">🔥 Rejoins les leaders de demain avec D2B1</div>
+      <div class="slide">🚀 Lance ton projet avec la communauté solidaire</div>
+      <div class="slide">💡 Investis 50$, récolte l’impact</div>
+    </div>
+  </section>
+
+  <!-- Formulaires -->
   <div class="container">
-    <h1>D2B1 - Inscription</h1>
+    <h2>Inscription</h2>
     <form id="registerForm">
-      <input type="text" id="fullname" placeholder="Nom complet" required />
-      <input type="email" id="email" placeholder="Email" required />
-      <input type="password" id="password" placeholder="Mot de passe" required />
-      <input type="password" id="confirm" placeholder="Confirmer le mot de passe" required />
+      <input type="text" placeholder="Nom complet" required />
+      <input type="email" placeholder="Email" required />
+      <input type="password" placeholder="Mot de passe" required />
+      <input type="password" placeholder="Confirmer mot de passe" required />
       <button type="submit">S'inscrire</button>
     </form>
-    <p>Déjà inscrit ? <a href="login.html">Se connecter</a></p>
+
+    <h2>Connexion</h2>
+    <form id="loginForm">
+      <input type="email" placeholder="Email" required />
+      <input type="password" placeholder="Mot de passe" required />
+      <button type="submit">Se connecter</button>
+    </form>
+
+    <h2>Espace Admin</h2>
+    <form id="adminLoginForm">
+      <input type="password" placeholder="Mot de passe Admin" required />
+      <button type="submit">Entrer dans l'admin</button>
+    </form>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bcryptjs@2.4.3/dist/bcrypt.min.js"></script>
+  <!-- WhatsApp Contact -->
+  <div class="contact">
+    <a href="https://wa.me/50943260012" target="_blank">💬 Contact WhatsApp</a>
+  </div>
+
   <script src="script.js"></script>
 </body>
 </html>
