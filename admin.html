@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin D2B1</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Bienvenue, Admin</h1>
+    <p>Interface sécurisée.</p>
+    <button onclick="logout()">Se déconnecter</button>
+  </div>
+
+  <script>
+    function logout() {
+      localStorage.removeItem("isAdmin");
+      window.location.href = "login.html";
+    }
+
+    if (!localStorage.getItem("isAdmin")) {
+      window.location.href = "login.html";
+    }
+  </script>
+</body>
+</html>
