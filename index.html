@@ -1,88 +1,30 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>D2B1 Auth</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background-color: #f0f4f8;
-    }
-    h1 {
-      text-align: center;
-    }
-    .link {
-      display: block;
-      margin: 10px 0;
-      text-decoration: none;
-      color: #007bff;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    .form-section {
-      display: none;
-      margin-top: 20px;
-      padding: 20px;
-      background-color: white;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-    }
-    input, button {
-      display: block;
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background-color: #28a745;
-      color: white;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    .contact-links a {
-      color: #333;
-      text-decoration: underline;
-    }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inscription Sécurisée - Dream2Build1</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="container">
+    <h1>🔐 Crée ton compte Dream2Build1</h1>
+    <form id="registerForm">
+      <label for="username">Nom d'utilisateur :</label>
+      <input type="text" id="username" required />
 
-  <h1>Bienvenue sur D2B1</h1>
+      <label for="password">Mot de passe :</label>
+      <input type="password" id="password" required minlength="8" />
+      <small>Utilise au moins 8 caractères avec chiffre, majuscule et symbole.</small>
 
-  <a class="link" onclick="showLogin()">🔐 Connexion utilisateur</a>
-  <a class="link" onclick="showAdminLoginRegister()">🛠️ Espace Admin</a>
-  <a class="link" onclick="showContactAdmin()">📞 Contacter l’administrateur</a>
+      <button type="submit">S'inscrire</button>
+    </form>
 
-  <!-- Formulaire utilisateur -->
-  <div id="loginForm" class="form-section">
-    <h2>Connexion utilisateur</h2>
-    <input type="email" placeholder="Adresse e-mail" required />
-    <input type="password" placeholder="Mot de passe" required />
-    <button>Se connecter</button>
+    <div id="result"></div>
   </div>
 
-  <!-- Formulaire admin -->
-  <div id="adminForm" class="form-section">
-    <h2>Connexion administrateur</h2>
-    <input type="text" placeholder="Nom d'utilisateur" required />
-    <input type="password" placeholder="Mot de passe admin" required />
-    <button>Entrer dans l'espace Admin</button>
-  </div>
-
-  <!-- Contact admin -->
-  <div id="contactForm" class="form-section">
-    <h2>Contacter l’administrateur</h2>
-    <p class="contact-links">
-      📧 Email : <a href="mailto:ejeambas@gmail.com">ejeambas@gmail.com</a><br>
-      📱 WhatsApp : <a href="https://wa.me/50943260012" target="_blank">+509 4326 0012</a>
-    </p>
-  </div>
-
+  <!-- Import de bcrypt.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
