@@ -1,373 +1,88 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>D2B1 - Rotation en ligne</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>D2B1 Auth</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #f0f4f9; padding: 20px; margin: 0; }
-    .card { background: white; padding: 20px; margin: 20px auto; max-width: 600px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #004080; font-size: 1.5em; }
-    input, button { width: 100%; padding: 10px; margin-top: 10px; font-size: 16px; box-sizing: border-box; cursor: pointer; }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    th { background-color: #004080; color: white; }
-    .btn-danger { background-color: #e74c3c; color: white; }
-    .btn-primary { background-color: #004080; color: white; }
-    .btn-secondary { background-color: #2980b9; color: white; }
-    @media (max-width: 600px) {
-      input, button { font-size: 14px; padding: 8px; }
-      table { font-size: 0.8em; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f0f4f8;
     }
-    #forgotSection { text-align: center; margin-top: 10px; font-size: 0.9em; color: #555; cursor: pointer; }
-
-    #dailyInvestContainer {
-        margin-top: 20px;
-        padding: 10px;
-        border: 1px dashed #004080;
-        border-radius: 5px;
-        text-align: left;
+    h1 {
+      text-align: center;
     }
-    #dailyInvestContainer label {
-        display: block;
-        margin-bottom: 5px;
-        font-weight: bold;
-        color: #004080;
+    .link {
+      display: block;
+      margin: 10px 0;
+      text-decoration: none;
+      color: #007bff;
+      font-size: 18px;
+      cursor: pointer;
     }
-    #dailyInvestContainer input {
-        width: calc(100% - 22px); 
-        display: inline-block;
-        margin-top: 0;
-        margin-bottom: 0;
+    .form-section {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+    input, button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .contact-links a {
+      color: #333;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <h1>Système Rotatif Dream2Build1</h1>
-  <div class="card" id="authCard">
-    <input type="password" id="adminPass" placeholder="Mot de passe admin" />
-    <button onclick="checkAdminStep1()" class="btn-primary">🔐 Connexion</button>
-    <div id="forgotSection" onclick="alert('Veuillez contacter l\'administrateur pour réinitialiser votre mot de passe.')">Mot de passe oublié ?</div>
+
+  <h1>Bienvenue sur D2B1</h1>
+
+  <a class="link" onclick="showLogin()">🔐 Connexion utilisateur</a>
+  <a class="link" onclick="showAdminLoginRegister()">🛠️ Espace Admin</a>
+  <a class="link" onclick="showContactAdmin()">📞 Contacter l’administrateur</a>
+
+  <!-- Formulaire utilisateur -->
+  <div id="loginForm" class="form-section">
+    <h2>Connexion utilisateur</h2>
+    <input type="email" placeholder="Adresse e-mail" required />
+    <input type="password" placeholder="Mot de passe" required />
+    <button>Se connecter</button>
   </div>
 
-  <div class="card" id="codeCard" style="display:none;">
-    <input type="text" id="code2FA" placeholder="Code de vérification (123456)" />
-    <button onclick="checkAdminStep2()" class="btn-primary">✅ Vérifier</button>
+  <!-- Formulaire admin -->
+  <div id="adminForm" class="form-section">
+    <h2>Connexion administrateur</h2>
+    <input type="text" placeholder="Nom d'utilisateur" required />
+    <input type="password" placeholder="Mot de passe admin" required />
+    <button>Entrer dans l'espace Admin</button>
   </div>
 
-  <div class="card" id="mainCard" style="display:none;">
-    <div id="dailyInvestContainer">
-        <label for="dailyInvest">Montant de l'investissement par participant ($):</label>
-        <input type="number" id="dailyInvest" value="10" min="0" step="0.01">
-    </div>
-    <input type="text" id="participantName" placeholder="Nom du participant" />
-    <button onclick="addParticipant()" class="btn-primary">➕ Ajouter</button>
-
-    <button onclick="validatePayments()" class="btn-secondary">✅ Valider Paiement</button>
-    <button onclick="nextDay()" class="btn-secondary">🔁 Jour Suivant</button>
-    <button onclick="exportToExcel()" class="btn-primary">📤 Export Historique</button>
-    <button onclick="resetData()" class="btn-danger">🗑️ Réinitialiser Données</button>
-
-    <div id="stats" style="margin-top:20px;"></div>
-    <div id="historyTable" style="margin-top:20px;"></div>
-    <div id="participantsList" style="margin-top:20px;"></div>
+  <!-- Contact admin -->
+  <div id="contactForm" class="form-section">
+    <h2>Contacter l’administrateur</h2>
+    <p class="contact-links">
+      📧 Email : <a href="mailto:ejeambas@gmail.com">ejeambas@gmail.com</a><br>
+      📱 WhatsApp : <a href="https://wa.me/50943260012" target="_blank">+509 4326 0012</a>
+    </p>
   </div>
 
-<script>
-const API_URL = "https://script.google.com/macros/s/AKfycby44bVHJV3oXXZ7OK7vl5NuOHQdiJDmjKvSve1GfZ-We3tG2ANyAV6X5l9jSR4ls8x0/exec";
-let participants = [];
-let history = [];
-let currentDay = 1;
-let lastDayOneThirdNetRetained = 0; // Variable pour stocker le 1/3 net retenu du jour précédent
-
-async function checkAdminStep1() {
-  const pass = document.getElementById("adminPass").value;
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "verifyPassword", password: pass })
-    });
-    const result = await response.json();
-    if (result.success) {
-      document.getElementById("authCard").style.display = "none";
-      document.getElementById("codeCard").style.display = "block";
-    } else {
-      alert("Mot de passe incorrect");
-    }
-  } catch (error) {
-    console.error("Erreur de vérification du mot de passe:", error);
-    alert("Erreur de communication avec le serveur. Vérifiez votre connexion.");
-  }
-}
-
-async function checkAdminStep2() {
-  const code = document.getElementById("code2FA").value.trim();
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "verifyCode", code: code })
-    });
-    const result = await response.json();
-    if (result.success) {
-      document.getElementById("codeCard").style.display = "none";
-      document.getElementById("mainCard").style.display = "block";
-      loadData();
-    } else {
-      alert("Code de vérification invalide");
-    }
-  } catch (error) {
-    console.error("Erreur de vérification du code:", error);
-    alert("Erreur de communication avec le serveur. Vérifiez votre connexion.");
-  }
-}
-
-async function loadData() {
-  try {
-    const res = await fetch(`${API_URL}?action=get`);
-    const data = await res.json();
-    participants = data.participants || [];
-    history = data.history || [];
-    currentDay = history.length + 1; 
-
-    // Mettre à jour lastDayOneThirdNetRetained basé sur le dernier historique
-    if (history.length > 0) {
-        lastDayOneThirdNetRetained = parseFloat(history[history.length - 1].retained) || 0;
-    } else {
-        lastDayOneThirdNetRetained = 0; // Pas d'historique, donc rien à ajouter
-    }
-
-    renderParticipants();
-    renderHistory();
-    updateStats();
-  } catch (error) {
-    console.error("Erreur lors du chargement des données:", error);
-    alert("Impossible de charger les données. Vérifiez votre connexion ou l'URL de l'API.");
-  }
-}
-
-function renderParticipants() {
-  const ul = document.getElementById("participantsList");
-  if (participants.length === 0) {
-    ul.innerHTML = "<h3>Participants inscrits</h3><p>Aucun participant ajouté pour l'instant.</p>";
-    return;
-  }
-  ul.innerHTML = "<h3>Participants inscrits (" + participants.length + ")</h3><ul>" +
-    participants.map(p => `<li>Jour ${p.day} – ${p.name}</li>`).join('') +
-    "</ul>";
-}
-
-function renderHistory() {
-  const div = document.getElementById("historyTable");
-  if (history.length === 0) {
-    div.innerHTML = "<h3>Historique des Rotations</h3><p>Aucun historique de rotation enregistré.</p>";
-    return;
-  }
-  let html = "<h3>Historique des Rotations</h3><table><tr><th>Jour</th><th>Bénéficiaire</th><th>Pool Base</th><th>Pool Total Jour</th><th>1/3</th><th>10% (Frais)</th><th>1/3 Net Retenu</th><th>Gain Net</th><th>Date & Heure</th></tr>";
-  for (let row of history) {
-    // Note: Les noms des champs dans row (total, oneThird, etc.) correspondent aux noms envoyés à l'API.
-    // Votre API actuelle envoie 'total' qui est en fait 'currentDayTotal' ici.
-    // Et 'retained' qui est 'oneThirdNetRetained' ici.
-    html += `<tr>
-                <td>${row.jour}</td>
-                <td>${row.beneficiary}</td>
-                <td>$${parseFloat(row.baseTotal || 0).toFixed(2)}</td> <td>$${parseFloat(row.total).toFixed(2)}</td>
-                <td>$${parseFloat(row.oneThird).toFixed(2)}</td>
-                <td>$${parseFloat(row.tenPercent).toFixed(2)}</td>
-                <td>$${parseFloat(row.retained).toFixed(2)}</td>
-                <td>$${parseFloat(row.payout).toFixed(2)}</td>
-                <td>${row.dateTime}</td>
-              </tr>`;
-  }
-  html += "</table>";
-  div.innerHTML = html;
-}
-
-async function addParticipant() {
-  const name = document.getElementById("participantName").value.trim();
-  if (!name) {
-    alert("Le nom du participant est requis !");
-    return;
-  }
-  const day = participants.length + 1; 
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "addParticipant", name, day })
-    });
-    document.getElementById("participantName").value = "";
-    loadData(); 
-  } catch (error) {
-    console.error("Erreur lors de l'ajout du participant:", error);
-    alert("Erreur lors de l'ajout du participant. Vérifiez votre connexion ou l'API.");
-  }
-}
-
-async function validatePayments() {
-    if (participants.length === 0) {
-        alert("Aucun participant dans la rotation. Veuillez ajouter des participants d'abord.");
-        return;
-    }
-
-    const jour = currentDay;
-    
-    // 1. Calcul du Pool de Base (baseTotal)
-    let baseMultiplier;
-    if (participants.length <= 5) { 
-        baseMultiplier = 10; 
-    } else {
-        baseMultiplier = 11; 
-    }
-    
-    const dailyInvestInput = document.getElementById("dailyInvest");
-    const dailyInvest = parseFloat(dailyInvestInput.value); 
-    
-    if (isNaN(dailyInvest) || dailyInvest <= 0) {
-        alert("Veuillez entrer un montant d'investissement individuel valide (nombre positif).");
-        dailyInvestInput.focus();
-        return;
-    }
-
-    const baseTotal = baseMultiplier * dailyInvest;
-
-    // 2. Calcul du Pool Total du Jour (currentDayTotal)
-    // Pour le jour 1, on ajoute 0 au pool de base. Pour les jours suivants, on ajoute le 1/3 net retenu du jour précédent.
-    const currentDayTotal = baseTotal + lastDayOneThirdNetRetained;
-
-    // 3. Prélèvement du Premier Tiers (oneThird)
-    const oneThird = currentDayTotal / 3;
-
-    // 4. Prélèvement des 10% de ce Tiers (tenPercentOfOneThird)
-    const tenPercentOfOneThird = oneThird * 0.1;
-
-    // 5. Calcul du "1/3 Net Retenu" (oneThirdNetRetained)
-    // C'est ce montant qui est retenu et sera ajouté au pool du jour suivant
-    const oneThirdNetRetained = oneThird - tenPercentOfOneThird;
-
-    // 6. Calcul du Gain Net du Bénéficiaire (payout)
-    // Le gain est le pool total du jour moins le montant qui sera retenu pour le jour suivant.
-    const payout = currentDayTotal - oneThirdNetRetained;
-
-    // Détermination du bénéficiaire du jour
-    const beneficiaryIndex = (jour - 1) % participants.length;
-    const beneficiary = participants[beneficiaryIndex].name;
-    const dateTime = new Date().toLocaleString("fr-FR", { hour12: false, timeZone: 'America/Port-au-Prince' });
-
-    // Envoi des données à l'API Google Sheets
-    try {
-        await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "addHistory",
-                jour,
-                beneficiary,
-                baseTotal: baseTotal.toFixed(2), // Nouveau champ pour le pool de base
-                total: currentDayTotal.toFixed(2), // 'total' dans l'API représente le 'currentDayTotal' ici
-                oneThird: oneThird.toFixed(2),
-                tenPercent: tenPercentOfOneThird.toFixed(2),
-                retained: oneThirdNetRetained.toFixed(2), // 'retained' dans l'API représente le 'oneThirdNetRetained' ici
-                payout: payout.toFixed(2),
-                dateTime
-            })
-        });
-        
-        // Mise à jour de la variable pour le prochain calcul
-        lastDayOneThirdNetRetained = oneThirdNetRetained;
-        currentDay++; 
-        await loadData(); 
-        alert(`Paiement validé pour le Jour ${jour}. Le bénéficiaire ${beneficiary} a reçu $${payout.toFixed(2)}.`);
-    } catch (error) {
-        console.error("Erreur lors de la validation du paiement:", error);
-        alert("Erreur lors de la validation du paiement. Veuillez vérifier la console.");
-    }
-}
-
-function nextDay() {
-  currentDay++;
-  updateStats(); 
-  alert(`Passage au Jour ${currentDay}.`);
-}
-
-function updateStats() {
-  const stats = document.getElementById("stats");
-  if (participants.length === 0) {
-    stats.innerHTML = "<p>Aucune donnée de participant pour les statistiques.</p>";
-    return;
-  }
-  
-  const jour = currentDay;
-  
-  // Calcul du Pool de Base (baseTotal)
-  let baseMultiplier;
-  if (participants.length <= 5) {
-      baseMultiplier = 10;
-  } else {
-      baseMultiplier = 11;
-  }
-
-  const dailyInvest = parseFloat(document.getElementById("dailyInvest").value);
-  if (isNaN(dailyInvest) || dailyInvest <= 0) {
-      stats.innerHTML = "<p class='error-msg'>Veuillez entrer un montant d'investissement individuel valide pour les statistiques.</p>";
-      return;
-  }
-  const baseTotal = baseMultiplier * dailyInvest;
-
-  // Calcul du Pool Total du Jour (currentDayTotal)
-  const currentDayTotal = baseTotal + lastDayOneThirdNetRetained;
-  
-  // Prélèvement du Premier Tiers (oneThird)
-  const oneThird = currentDayTotal / 3;
-  // Prélèvement des 10% de ce Tiers (tenPercentOfOneThird)
-  const tenPercentOfOneThird = oneThird * 0.1;
-  // Calcul du "1/3 Net Retenu" (oneThirdNetRetained)
-  const oneThirdNetRetained = oneThird - tenPercentOfOneThird;
-  // Calcul du Gain Net du Bénéficiaire (payout)
-  const payout = currentDayTotal - oneThirdNetRetained;
-  
-  const beneficiary = participants.length > 0 ? participants[(jour - 1) % participants.length].name : "N/A";
-  
-  stats.innerHTML = `<strong>Statistiques du Jour Actuel (${jour}) :</strong><br>
-      Bénéficiaire Prévu: <span style="font-weight:bold; color:#007BFF;">${beneficiary}</span><br>
-      Participants Actifs: ${participants.length}<br>
-      Montant d'investissement individuel: $${dailyInvest.toFixed(2)}<br>
-      <hr style="border-top: 1px dotted #ccc; margin: 10px 0;">
-      Pool de Base (sur ${baseMultiplier} participants): $${baseTotal.toFixed(2)}<br>
-      1/3 Net Retenu du Jour Précédent ajouté: $${lastDayOneThirdNetRetained.toFixed(2)}<br>
-      Pool Total pour le Jour ${jour}: <strong style="color:#28a744;">$${currentDayTotal.toFixed(2)}</strong><br>
-      1/3 Retenu Initialement: $${oneThird.toFixed(2)}<br>
-      10% de ce 1/3 (Frais/Réserve): $${tenPercentOfOneThird.toFixed(2)}<br>
-      Montant 1/3 Net Retenu (pour le prochain jour): $${oneThirdNetRetained.toFixed(2)}<br>
-      Gain Net du Bénéficiaire: <strong style="color:#dc3545;">$${payout.toFixed(2)}</strong>`;
-}
-
-function exportToExcel() {
-  if (history.length === 0) return alert("Aucun historique à exporter");
-  const ws = XLSX.utils.json_to_sheet(history);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Historique");
-  XLSX.writeFile(wb, "rotation_d2b1_online.xlsx");
-}
-
-async function resetData() {
-  if (!confirm("ATTENTION : Confirmer la réinitialisation COMPLÈTE de toutes les données (participants et historique) ? Cette action est irréversible !")) return;
-  try {
-    await fetch(API_URL, {
-      method: "POST",
-      body: JSON.stringify({ action: "resetAll" })
-    });
-    participants = [];
-    history = [];
-    currentDay = 1;
-    lastDayOneThirdNetRetained = 0; // Réinitialiser aussi cette variable
-    renderParticipants();
-    renderHistory();
-    updateStats();
-    alert("Toutes les données ont été réinitialisées avec succès.");
-  } catch (error) {
-    console.error("Erreur lors de la réinitialisation des données:", error);
-    alert("Erreur lors de la réinitialisation des données. Vérifiez votre connexion ou l'API.");
-  }
-}
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
